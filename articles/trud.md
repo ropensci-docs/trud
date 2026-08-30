@@ -1,0 +1,128 @@
+# trud
+
+``` r
+
+library(trud)
+```
+
+The [National Health Service (NHS) England Technology Reference data
+Update Distribution
+(TRUD)](https://isd.digital.nhs.uk/trud/users/guest/filters/0/api)
+enables programmatic access to retrieve metadata for and download NHS
+TRUD release items. The `trud` package wraps this API, facilitating
+programmatic retrieval and updating of NHS TRUD resources:
+
+Having installed `trud`, you will also need to:
+
+- [Sign up for a free
+  account](https://isd.digital.nhs.uk/trud/users/guest/filters/0/account/form)
+  with NHS TRUD
+- Set your API key (shown on your account information page) as an
+  environmental variable named `TRUD_API_KEY`. The best way to do this
+  is by placing your API key in a [`.Renviron`
+  file](https://rstats.wtf/r-startup.html#renviron). For example, create
+  or edit your project `.Renviron` file with
+  [`usethis::edit_r_environ()`](https://usethis.r-lib.org/reference/edit.html),
+  then populate as follows (replacing
+  `e963cc518cc41500e1a8940a93ffc3c0915e2983` with your own API key):[^1]
+
+&nbsp;
+
+    TRUD_API_KEY=e963cc518cc41500e1a8940a93ffc3c0915e2983
+
+> **Optional**: You can customise the user agent header used in API
+> requests by setting the `TRUD_USER_AGENT` environment variable. This
+> can be useful for CI/CD environments or organisational tracking.
+
+## Understanding TRUD Subscriptions
+
+**Important**: NHS TRUD operates on a subscription-based model. Having
+an API key allows you to authenticate, but you must also subscribe to
+individual items through the NHS TRUD website before you can access
+them.
+
+**The subscription workflow:**
+
+1.  Create your NHS TRUD account and get your API key (as described
+    above)
+2.  Browse available items on the [NHS TRUD
+    website](https://isd.digital.nhs.uk/trud/users/guest/filters/0/categories/1)
+3.  Subscribe to the specific items you need
+4.  Use the `trud` package to access your subscribed items
+
+## Examples
+
+### Check your current subscriptions
+
+Start by seeing what items you’re already subscribed to:
+
+``` r
+
+get_subscribed_metadata()
+```
+
+### Browse all available items
+
+You can see all available TRUD items, though you’ll need to subscribe to
+access them:
+
+``` r
+
+trud_items()
+```
+
+> Note that item numbers can also be found in the URLs of releases
+> pages, between `items` and `releases`. For example, the URL for the
+> [Community Services Data Set pre-deadline extract XML
+> Schema](https://isd.digital.nhs.uk/trud/users/guest/filters/0/categories/1/items/394/releases)
+> releases page is
+> `https://isd.digital.nhs.uk/trud/users/guest/filters/0/categories/1/items/394/releases`
+> and the item number is `394`.
+
+To subscribe to an item, visit its page on the NHS TRUD website and
+click the “Subscribe” button.
+
+### Get metadata for a specific item
+
+Once subscribed to an item, you can retrieve its metadata:
+
+``` r
+
+get_item_metadata(394) |>
+  # Display structure without showing sensitive API keys in URLs
+  purrr::map_at("releases", \(release) purrr::map(release, names))
+```
+
+### Download an item
+
+``` r
+
+# by default the latest release will be downloaded to the current working directory
+x <- download_item(394, directory = tempdir())
+unzip(x, list = TRUE)
+```
+
+### Working with specific releases
+
+To download a specific release (rather than the latest), you need the
+release ID. Release IDs are found in the `id` field of each release:
+
+``` r
+
+# Get metadata for all releases (not just latest)
+metadata <- get_item_metadata(394, release_scope = "all")
+
+# Release IDs are in the `id` field of each release
+metadata$releases |> purrr::map("id")
+
+# The same IDs are also used to name the releases list
+metadata$releases |> names()
+
+# Use a specific release ID with download_item()
+release_id <- metadata$releases[[1]]$id  # Get ID of first release
+download_item(394, directory = tempdir(), file_type = "checksum", release = release_id)
+```
+
+[^1]: You will also need to restart your R session to set any
+    environmental variables that have been newly-added to your project
+    `.Renviron` file.

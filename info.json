@@ -1,0 +1,13 @@
+{
+  "commit": {
+    "commit": "becd1647ad2f91ad4f715d8a32295a3b1f9f917f",
+    "author": "rmgpanw <rmgpanw@ucl.ac.uk>",
+    "time": "2026-03-16T22:17:06Z",
+    "files": 2,
+    "merge": false,
+    "message": "Increment version number to 0.2.1.9000\n"
+  },
+  "repo": "https://github.com/ropensci/trud",
+  "pkg": "trud",
+  "time": "2026-08-30T07:25:16Z"
+}
