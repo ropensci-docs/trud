@@ -1,0 +1,186 @@
+# trud
+
+The goal of `trud` is to provide a convenient R interface to the
+[National Health Service (NHS) England Technology Reference data Update
+Distribution
+(TRUD)](https://isd.digital.nhs.uk/trud/users/guest/filters/0/api).
+
+The NHS TRUD service provides essential reference files that underpin a
+wide range of electronic health record (EHR) areas, both in the UK and
+internationally. These files include clinical coding systems such as
+ICD, Read codes, prescription codes, and the SNOMED CT ontology, with
+regular updates to reflect new knowledge and changes in clinical
+practice. NHS TRUD content supports key research areas like disease
+phenotyping, cohort selection, epidemiology, health services research,
+and the development of risk prediction models.
+
+`trud` enables seamless, programmatic retrieval and updating of NHS TRUD
+release items, removing the need for manual downloads and reducing the
+risk of errors or version drift. This helps researchers maintain
+reproducible, up-to-date analyses — whether as part of ad-hoc studies or
+automated pipelines.
+
+To learn more about NHS TRUD and its available resources, visit the [NHS
+TRUD
+website](https://isd.digital.nhs.uk/trud/users/guest/filters/0/home).
+
+## Installation
+
+You can install this package from CRAN:
+
+``` r
+
+install.packages("trud")
+```
+
+Or you can install the development version of `trud` from either
+[GitHub](https://github.com/ropensci/trud) with:
+
+``` r
+
+# install.packages("pak")
+pak::pak("ropensci/trud")
+```
+
+… or [R Universe](https://ropensci.r-universe.dev/builds) with:
+
+``` r
+
+install.packages("trud", repos = c('https://ropensci.r-universe.dev', 'https://cloud.r-project.org'))
+```
+
+You will also need to [sign up for a free
+account](https://isd.digital.nhs.uk/trud/users/guest/filters/0/account/form)
+with NHS TRUD and set up your API key as described in
+[`vignette("trud")`](https://docs.ropensci.org/trud/articles/trud.md).
+
+## Getting Started
+
+### Understanding TRUD Subscriptions
+
+**Important**: NHS TRUD operates on a subscription model. After creating
+your account, you must individually subscribe to each item you want to
+access through the [NHS TRUD
+website](https://isd.digital.nhs.uk/trud/users/guest/filters/0/categories/1).
+
+### Recommended Workflow
+
+**Step 0**: Set up your TRUD API key as an environmental variable named
+`TRUD_API_KEY`. For example, create or edit your project `.Renviron`
+file with
+[`usethis::edit_r_environ()`](https://usethis.r-lib.org/reference/edit.html),
+then populate as follows (replacing
+`e963cc518cc41500e1a8940a93ffc3c0915e2983` with your own API key):[^1]
+
+``` R
+TRUD_API_KEY=e963cc518cc41500e1a8940a93ffc3c0915e2983
+```
+
+**Step 1**: Check what you’re already subscribed to:
+
+``` r
+
+library(trud)
+
+# See items you can currently access
+get_subscribed_metadata()
+#>  ■■■■■■■■■■■■                      35% |  ETA:  4s
+#>  ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■     95% |  ETA:  0s
+#> # A tibble: 18 × 3
+#>    item_number item_name                                            metadata    
+#>          <int> <chr>                                                <list>      
+#>  1         394 Community Services Data Set pre-deadline extract XM… <named list>
+#>  2         239 dm+d XML transformation tool                         <named list>
+#>  3         263 eViewer application                                  <named list>
+#>  4         398 Global Trade Item Number to OPCS-4 code cross refer… <named list>
+#>  5        1760 NHS Continuing Health Care (CHC) Data Set - JSON Sc… <named list>
+#>  6         719 NHS Continuing Health Care (CHC) Data Set - XML Sch… <named list>
+#>  7           9 NHS Data Migration                                   <named list>
+#>  8         258 NHS ICD-10 5th Edition data files                    <named list>
+#>  9           8 NHS Read Browser                                     <named list>
+#> 10          19 NHS UK Read Codes Clinical Terms Version 3           <named list>
+#> 11         255 NHS UK Read Codes Clinical Terms Version 3, Cross M… <named list>
+#> 12          24 NHSBSA dm+d                                          <named list>
+#> 13         119 OPCS-4 data files                                    <named list>
+#> 14         264 OPCS-4 eVersion book                                 <named list>
+#> 15         659 Primary Care Domain reference sets                   <named list>
+#> 16         101 SNOMED CT UK Clinical Edition, RF2: Full, Snapshot … <named list>
+#> 17          98 SNOMED CT UK Data Migration Workbench                <named list>
+#> 18        1799 SNOMED CT UK Monolith Edition, RF2: Snapshot         <named list>
+```
+
+**Step 2**: Browse all available items (note: subscription required for
+access):
+
+``` r
+
+# List all available TRUD items
+trud_items()
+#> # A tibble: 74 × 2
+#>    item_number item_name                                                        
+#>          <int> <chr>                                                            
+#>  1         246 Cancer Outcomes and Services Data Set XML Schema                 
+#>  2         245 Commissioning Data Set XML Schema                                
+#>  3         599 Community Services Data Set Intermediate Database                
+#>  4         393 Community Services Data Set post-deadline extract XML Schema     
+#>  5         394 Community Services Data Set pre-deadline extract XML Schema      
+#>  6         391 Community Services Data Set XML Schema                           
+#>  7        1899 Diagnostic Imaging Data Set (DIDS) - CSV format                  
+#>  8         248 Diagnostic Imaging Data Set XML Schema                           
+#>  9         239 dm+d XML transformation tool                                     
+#> 10        1859 Electronic Prescribing and Medicines Administration Data Sets XM…
+#> # ℹ 64 more rows
+```
+
+**Step 3**: Subscribe to additional items you need via the [NHS TRUD
+website](https://isd.digital.nhs.uk/trud/users/guest/filters/0/categories/1),
+then access them:
+
+``` r
+
+# After subscribing to an item (e.g., item 394), you can:
+
+# Get metadata
+metadata <- get_item_metadata(394)
+
+# Download the item
+file_path <- download_item(394, directory = tempdir())
+```
+
+## Available functionality
+
+The main functions provided by `trud` are:
+
+- [`get_subscribed_metadata()`](https://docs.ropensci.org/trud/reference/get_subscribed_metadata.md):
+  Shows items you can currently access
+- [`trud_items()`](https://docs.ropensci.org/trud/reference/trud_items.md):
+  Lists all available items
+- [`get_item_metadata()`](https://docs.ropensci.org/trud/reference/get_item_metadata.md):
+  Retrieves metadata for a specific item
+- [`download_item()`](https://docs.ropensci.org/trud/reference/download_item.md):
+  Downloads files for a specific item
+
+Please see
+[`vignette("trud")`](https://docs.ropensci.org/trud/articles/trud.md)
+for further information and getting started.
+
+## Citing trud
+
+If you find `trud` useful, please consider citing it. Citation details
+are available
+[here](https://docs.ropensci.org/trud/authors.html#citation).
+
+## Community guidelines
+
+Feedback, bug reports, and feature requests are welcome; file issues or
+seek support [here](https://github.com/ropensci/trud/issues). If you
+would like to contribute to the package, please see our [contributing
+guidelines](https://docs.ropensci.org/trud/CONTRIBUTING.html).
+
+Please note that this package is released with a [Contributor Code of
+Conduct](https://ropensci.org/code-of-conduct/). By contributing to this
+project, you agree to abide by its terms.
+
+[^1]: You will also need to restart your R session to set any
+    environmental variables that have been newly-added to your project
+    `.Renviron` file.
